@@ -1,3 +1,10 @@
+"""
+target_manager.py
+
+This module handles SSH target management for the Remote Shell project.
+Support information check, Saving and loading targets.
+Provide an interactive interface for selecting or creating targets.
+"""
 import os
 import json
 import ipaddress

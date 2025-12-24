@@ -1,3 +1,9 @@
+"""
+ssh_client.py
+
+Provide an interactive SSH session with a real pseudo-terminal(pty).
+Supports real-time input and output, Ctrl+C forwarding and terminal restoration.
+"""
 import paramiko
 import sys
 import tty

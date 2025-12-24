@@ -1,3 +1,11 @@
+"""
+hacker_banner.py
+
+Provides hacker-style UI utilities:
+ASCII banners
+Colored output
+Loading animations
+"""
 import pyfiglet
 from colorama import Fore, init, Style
 import sys
