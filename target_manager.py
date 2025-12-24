@@ -1,8 +1,8 @@
 import os
 import json
 import ipaddress
-import getpass
 import sys
+from hacker_banner import print_info, print_error, print_success, print_warning, prompt, get_pass, loading
 
 # The target saving file
 DATA_DIR = "data"
@@ -37,7 +37,7 @@ def save_target(name, ip, port, user):
     targets = load_target() or {}
 
     if name in targets:
-        confirm = input(f"Target {name} already exists. Overwrite? [y/n] ").lower()
+        confirm = prompt(f"Target {name} already exists. Overwrite? [y/n] ").lower()
         if confirm not in ["y", "yes"]:
             sys.exit("Saving cancelled")
 
@@ -50,7 +50,7 @@ def save_target(name, ip, port, user):
     with open(TARGET_SAVE_FILE, "w") as f:
         json.dump(targets, f, indent=4)
 
-    print(f"Target '{name}' successfully saved to {TARGET_SAVE_FILE}")
+    print_success(f"Target '{name}' successfully saved to {TARGET_SAVE_FILE}")
 
 
 
@@ -66,50 +66,59 @@ def load_target():
 
 
 def get_target():
-    choice = input("Do you want to use the saved target? [y/n] ").lower()
+    choice = prompt("Do you want to use the saved target? [y/n] ").lower()
 
     if choice in ("y", "yes", "ye"):
+        loading("Loading targets...", 5)
         targets = load_target()
         if not targets:
-            print("No saved targets found, please create a new one.")
+            print_warning("No saved targets found, please create a new one.")
             return get_target()
-        print("Saved targets:")
+        print_info("Saved targets:")
         for i, name in enumerate(targets.keys(), start=1):
-            print(f"{i}. {name}")
+            print_info(f"{i}. {name}")
 
-        selection = input("Choose a target number: ").strip()
+        selection = prompt("Choose a target number: ").strip()
         try:
             selection = int(selection) - 1
             if selection < 0 or selection > len(targets):
                 raise ValueError
         except ValueError:
-            print("Invalid selection")
+            print_error("Invalid selection")
             return get_target()
 
         name = list(targets.keys())[selection]
         t = targets[name]
-        check_target(name, t["ip"], t["port"], t["user"])
-        passwd = getpass.getpass(f"Password for {t['user']}@{t['ip']}: ")
+        try:
+            check_target(name, t["ip"], t["port"], t["user"])
+        except ValueError as e:
+            print_error(str(e))
+            return get_target()
+        passwd = get_pass(f"Password for {t['user']}@{t['ip']}: ")
         return name, t["ip"], t["port"], t["user"], passwd
 
     elif choice in ("n", "no"):
-        name = input("Target name: ")
-        ip = input("Target IP: ")
-        port = input("Port number: ")
-        user = input("Username: ")
-        check_target(name, ip, port, user)
-        passwd = getpass.getpass(f"Password for {user}@{ip}: ")
-        choice = input("Do you want to save the target? [y/n] ").lower()
+        name = prompt("Target name: ")
+        ip = prompt("Target IP: ")
+        port = prompt("Port number: ")
+        user = prompt("Username: ")
+        try:
+            check_target(name, ip, port, user)
+        except ValueError as e:
+            print_error(str(e))
+            return get_target()
+        passwd = get_pass(f"Password for {user}@{ip}: ")
+        choice = prompt("Do you want to save the target? [y/n] ").lower()
         if choice in ("y", "yes", "ye"):
             save_target(name, ip, port, user)
             return name, ip, port, user, passwd
         elif choice in ("n", "no"):
             return name, ip, port, user, passwd
         else:
-            print("Invalid selection")
+            print_error("Invalid selection")
             return get_target()
     else:
-        print("Invalid selection")
+        print_error("Invalid selection")
         return get_target()
 
 

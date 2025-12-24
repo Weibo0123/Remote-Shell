@@ -4,19 +4,21 @@ import tty
 import select
 import termios
 import os
+from hacker_banner import print_info, print_error, print_success, loading
 
 def ssh_session(ip, port, user, password):
+    channel = None
     client = paramiko.SSHClient()
     client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
     old_tty = termios.tcgetattr(sys.stdin)
 
     try:
+        loading(text="Connecting", duration=5)
         client.connect(ip, port=port, username=user, password=password)
         channel = client.get_transport().open_session()
         channel.get_pty(term="xterm", width=80, height=24)
         channel.invoke_shell()
-
-        print(f"Connected to {user}@{ip}. Type 'exit' to disconnect.")
+        print_success(f"Connected to {user}@{ip}. Type 'exit' to disconnect.")
 
         tty.setraw(sys.stdin.fileno())
 
@@ -36,9 +38,12 @@ def ssh_session(ip, port, user, password):
     except KeyboardInterrupt:
         channel.send("\x03")
     except Exception as e:
-        sys.exit(f"Connection failed: {e}")
+        print_error(f"Connection failed: {e}")
+        sys.exit()
     finally:
+        loading(text="Disconnecting", duration=5)
         termios.tcsetattr(sys.stdin, termios.TCSADRAIN, old_tty)
-        channel.close()
+        if channel:
+            channel.close()
         client.close()
-        print("Disconnected")
+        print_info("Disconnected")
